@@ -159,6 +159,7 @@ const getAllProperties = function(options, limit = 10) {
       } else {
         values = [` AND WHERE avg_rating > ${minimum_rating} `, limit]
       }
+      break;
   }
 
   pool
@@ -182,9 +183,37 @@ exports.getAllProperties = getAllProperties;
  * @return {Promise<{}>} A promise to the property.
  */
 const addProperty = function(property) {
-  const propertyId = Object.keys(properties).length + 1;
-  property.id = propertyId;
-  properties[propertyId] = property;
-  return Promise.resolve(property);
+  let propertyString = '';
+  let valueString = ''
+  let counter = 1;
+  let query = `INSERT INTO properties ($1)
+  VALUES ($2)
+  RETURNING *;`;
+
+  function addToString(attribute) {
+      if (property.length ==  counter) {
+      propertyString =+ ` ${attribute} `;
+      valueString =+ ` ${property[attribute]} ` ;
+      return;
+    } else {
+      propertyString =+ ` ${attribute}, `;
+      valueString =+ ` ${property[attribute]}, ` ;
+    }
+  }
+
+  for (let key in property) {
+    addToString(key);
+  }
+  let values = [propertyString, valueString]
+  
+  pool.query(query, values)
+  .then((res) => {
+    return Promise.resolve(res.rows);
+  })
+  .catch((err) => {
+    console.log(err);
+  })
+
 }
 exports.addProperty = addProperty;
+
