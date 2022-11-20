@@ -78,10 +78,6 @@ const addUser =  function(user) {
   .catch(error => {
     console.log(error);
   })
-
-
-
-
 }
 exports.addUser = addUser;
 
@@ -125,8 +121,48 @@ exports.getAllReservations = getAllReservations;
  */
 const getAllProperties = function(options, limit = 10) {
   const limitedProperties = {};
+  let query = `SELECT properties.*, AVG(rating) AS avg_rating
+  FROM properties JOIN property_reviews ON property_id=properties.id
+  $1
+  GROUP BY properties.id;
+  LIMIT $2 ;`;
+
+  let values; 
+  switch (options) {
+    case options.city:
+      if (!values[0]) {  
+        values = [`WHERE city = '${options.city}' `, limit];
+      } else {
+        values = [` AND WHERE city = '${options.city}' `] , limit;
+      }
+    case options.owner_id:
+      if (!values[0]) {
+        values = [`WHERE owner_id = '${options.owner_id}' `, limit];
+      } else {
+        values = [` AND WHERE owner_id = '${options.owner_id}' `, limit];
+      }
+    case options.minimum_price_per_night:
+      if (!values[0]) {
+        values = [`WHERE minimum_price_per_night > ${options.minimum_price_per_night}`, limit];
+      } else {
+        values = [` AND WHERE minimum_price_per_night > ${options.minimum_price_per_night} `, limit];
+      }
+    case options.maximum_price_per_nght:
+      if (!values[0]) {
+        values = [`WHERE maximum_price_per_nght < ${options.maximum_price_per_nght}`, limit];
+      } else {
+        values = [` AND WHERE maximum_price_per_nght < ${options.maximum_price_per_nght} `, limit];
+      }
+    case minimum_rating:
+      if (!values[0]) {
+        values = [`WHERE avg_rating > ${minimum_rating}`, limit];
+      } else {
+        values = [` AND WHERE avg_rating > ${minimum_rating} `, limit]
+      }
+  }
+
   pool
-  .query('SELECT * FROM properties LIMIT $1',[limit])
+  .query(query,[limit])
   .then((result) => {
     console.log(result.rows);
     if (result.rows[0]) {
@@ -136,11 +172,9 @@ const getAllProperties = function(options, limit = 10) {
   })
   .catch((err) => {
     console.log(err.message);
-    return Promise.reject(err.message)
   })
 };
 exports.getAllProperties = getAllProperties;
-
 
 /**
  * Add a property to the database
