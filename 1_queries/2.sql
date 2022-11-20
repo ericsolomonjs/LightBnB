@@ -1,0 +1,1 @@
+SELECT SUM(end_date-start_date) / COUNT(reservations.*) AS avg_duration FROM reservations;
